@@ -94,12 +94,14 @@ Route::group([], function () {
             'people.*' => 'integer',
             'pagination' => 'integer'
         ]);
+        $from = request()->input('from') === "bulk" ? env('twilio_bulk_number') : (request()->input('from') === "scheduling" ? env('twilio_scheduling_number') : env('twilio_job_details_number'));
         $sms_received = DB::table('SMS_Log')->select(DB::raw('Users.username,SMS_Log.*,if(received.first_name IS null,false,true) as received,if(received.first_name IS null,CONCAT(sent.first_name," ",sent.last_name),CONCAT(received.first_name," ",received.last_name)) as person_name'))
             ->join('Log', 'SMS_Log.log_id', '=', 'Log.log_id')
             ->join('Users', 'Users.person_id', '=', 'Log.person_id')
             ->leftJoin('People as received', 'SMS_Log.to_number', '=', 'received.phone_number')
             ->leftJoin('People as sent', 'SMS_Log.from_number', '=', 'sent.phone_number')
             ->whereIntegerInRaw('received.person_id', request()->input('people'))
+            ->where('SMS_Log.from_number','=',$from)
             ->orderByDesc('timestamp')->simplePaginate(request()->input('paginate', 50));
         $sms_sent = DB::table('SMS_Log')->select(DB::raw('Users.username,SMS_Log.*,if(received.first_name IS null,false,true) as received,if(received.first_name IS null,CONCAT(sent.first_name," ",sent.last_name),CONCAT(received.first_name," ",received.last_name)) as person_name'))
             ->leftjoin('Log', 'SMS_Log.log_id', '=', 'Log.log_id')
@@ -107,6 +109,7 @@ Route::group([], function () {
             ->leftJoin('People as received', 'SMS_Log.to_number', '=', 'received.phone_number')
             ->leftJoin('People as sent', 'SMS_Log.from_number', '=', 'sent.phone_number')
             ->whereIntegerInRaw('sent.person_id', request()->input('people'))
+            ->where('SMS_Log.to_number','=',$from)
             ->orderByDesc('timestamp')->simplePaginate(request()->input('paginate', 50));
         return response()->json(["message" => "employee sms", "sent" => $sms_sent,"received" => $sms_received]);
     });
@@ -118,6 +121,7 @@ Route::group([], function () {
         DB::table('SMS_Log')->where('twilio_sid','=',request()->input('sid'))->update(['dh_read' => request()->input('dh_read')]);
         return response()->json(["message" => "sms updated"]);
     });
+
     Route::get('quick_query', function () {
         return response()->json(['message' => "hi"]);
     });
