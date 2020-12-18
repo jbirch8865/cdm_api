@@ -15,7 +15,7 @@ class sms extends Model
 
     public function scopeUnread($query)
     {
-        return $query->where('dh_read',0);
+        return $query->where('dh_read',0)->where('to_number',env('twilio_bulk_number'));
     }
 
     public function has_log() : \Illuminate\Database\Eloquent\Relations\HasOne

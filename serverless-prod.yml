@@ -5,7 +5,7 @@ provider:
   # The AWS region in which to deploy (us-east-1 is the default)
   region: us-west-2
   # The stage of the application, e.g. dev, production, staging… ('dev' is the default)
-  stage: dev
+  stage: prod
   runtime: provided
   vpc:
     securityGroupIds:
@@ -15,7 +15,7 @@ provider:
       - subnet-0ee565742c26c9143
   environment:
     DB_HOST: ${env:MYSQL_HOST}
-    DB_DATABASE: ${env:MYSQL_DATABASE}
+    DB_DATABASE: D-HProd
     DB_USERNAME: ${env:MYSQL_USERNAME}
     DB_PASSWORD: ${env:MYSQL_PASSWORD}
     azureClientID: api://1039b1ea-694d-48f0-bc67-90c533b3b570
@@ -26,7 +26,7 @@ provider:
     twilio_bulk_number: "+15035064689"
     TWILIO_SID: ${env:TWILIO_SID}
     TWILIO_AUTH_TOKEN: ${env:TWILIO_KEY}
-    SPECIAL_ENDPOINT_URL: https://flzbu88cxj.execute-api.us-west-2.amazonaws.com/dev
+    SPECIAL_ENDPOINT_URL: https://n8ngdr90h8.execute-api.us-west-2.amazonaws.com/prod
 package:
   # Directories to exclude from deployment
   exclude:

@@ -27,15 +27,23 @@ use Twilio\Rest\Client;
 Route::group([], function () {
     Route::get('contacts', function () {
         request()->validate(['name' => 'required|string|max:35']);
+
         $contacts = App\Models\Contact::with('belongs_to_company.customer')->where(['Active_Status' => 1, 'person_type' => 2])->where(function ($query) {
-            $query->where('first_name', 'LIKE', "%" . request()->input('name') . "%")->orWhere('last_name', 'LIKE', '%' . request()->input('name') . '%');
-        })->get();
+            $first_name = substr(request()->input('name'), 0, strpos(request()->input('name'), ' ') === false ? strlen(request()->input('name')) : strpos(request()->input('name'), ' '));
+            $last_name = substr(request()->input('name'), strpos(request()->input('name'), ' ') === false ? strlen(request()->input('name')) + 1 : strpos(request()->input('name'), ' ') + 1);
+
+            if ($last_name) {
+                $query->where('first_name', 'LIKE', $first_name . "%")->where('last_name', 'LIKE', $last_name . '%');
+            } else {
+                $query->where('first_name', 'LIKE', $first_name . "%")->orWhere('last_name', 'LIKE', $first_name . '%');
+            }
+        })->paginate();
         return response()->json(["message" => "contacts", "contacts" => $contacts]);
     });
     Route::get('employees', function () {
         $employees = employee::with(['has_skills.skill', 'has_sent_sms' => function ($query) {
             $query->unread();
-        }])->where(['Active_Status' => 1, 'person_type' => 1])->get();
+        }])->where(['Active_Status' => 1, 'person_type' => 1])->orderBy('first_name', 'asc')->get();
         return response()->json(["message" => "employees", "employees" => $employees]);
     });
     Route::get('employees/{employee}/sms', function (employee $employee) {
@@ -51,7 +59,7 @@ Route::group([], function () {
         $status = ['accepted' => 0, 'queued' => 1, 'sending' => 2, 'sent' => 3, 'receiving' => 4, 'received' => 5, 'delivered' => 6, 'undelivered' => 7, 'failed' => 8];
         request()->validate([
             'from' => 'required|string|max:15|in:bulk,job,scheduling',
-            'message' => 'required|string|max:160'
+            'message' => 'required|string|max:1600'
         ]);
         $account_sid = getenv("TWILIO_SID");
         $auth_token = getenv("TWILIO_AUTH_TOKEN");
@@ -101,7 +109,7 @@ Route::group([], function () {
             ->leftJoin('People as received', 'SMS_Log.to_number', '=', 'received.phone_number')
             ->leftJoin('People as sent', 'SMS_Log.from_number', '=', 'sent.phone_number')
             ->whereIntegerInRaw('received.person_id', request()->input('people'))
-            ->where('SMS_Log.from_number','=',$from)
+            ->where('SMS_Log.from_number', '=', $from)
             ->orderByDesc('timestamp')->simplePaginate(request()->input('paginate', 50));
         $sms_sent = DB::table('SMS_Log')->select(DB::raw('Users.username,SMS_Log.*,if(received.first_name IS null,false,true) as received,if(received.first_name IS null,CONCAT(sent.first_name," ",sent.last_name),CONCAT(received.first_name," ",received.last_name)) as person_name'))
             ->leftjoin('Log', 'SMS_Log.log_id', '=', 'Log.log_id')
@@ -109,16 +117,16 @@ Route::group([], function () {
             ->leftJoin('People as received', 'SMS_Log.to_number', '=', 'received.phone_number')
             ->leftJoin('People as sent', 'SMS_Log.from_number', '=', 'sent.phone_number')
             ->whereIntegerInRaw('sent.person_id', request()->input('people'))
-            ->where('SMS_Log.to_number','=',$from)
+            ->where('SMS_Log.to_number', '=', $from)
             ->orderByDesc('timestamp')->simplePaginate(request()->input('paginate', 50));
-        return response()->json(["message" => "employee sms", "sent" => $sms_sent,"received" => $sms_received]);
+        return response()->json(["message" => "employee sms", "sent" => $sms_sent, "received" => $sms_received]);
     });
     Route::put('sms', function () {
         request()->validate([
             'sid' => 'required|string|max:40',
             'dh_read' => 'required|bool'
         ]);
-        DB::table('SMS_Log')->where('twilio_sid','=',request()->input('sid'))->update(['dh_read' => request()->input('dh_read')]);
+        DB::table('SMS_Log')->where('twilio_sid', '=', request()->input('sid'))->update(['dh_read' => request()->input('dh_read')]);
         return response()->json(["message" => "sms updated"]);
     });
 
