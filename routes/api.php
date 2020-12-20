@@ -135,9 +135,9 @@ Route::group([], function () {
         return response()->json(["message" => "sms updated"]);
     });
 
-    Route::post('send_ugly_sweater_invitation', function() {
-        $Users = User::where('Active_Status', 1)->whereNotNull('email_address')->get();
-        Mail::to('randy@d-hflagging.com')->send(new JoinUglySweater);
+    Route::post('ugly_sweater_invitation', function() {
+//        $Users = DB::where('Active_Status', 1)->whereNotNull('email_address')->get();
+        Mail::to('joel@d-hflagging.com')->send(new JoinUglySweater);
         return response()->json(['message'=>'email sent'],201);
     });
 
@@ -162,7 +162,7 @@ Route::group([], function () {
         $submission->comment = request()->input('comment');
         $submission->url = request()->input('imageUrl');
         $submission->save();
-        return response()->json(['message' => 'Submission Received','submission' => $submission],201);
+        return response()->json(['message' => 'Submission Updated','submission' => $submission],201);
     });
     Route::get('ugly_sweater_submission', function() {
         $submission = submission::all();

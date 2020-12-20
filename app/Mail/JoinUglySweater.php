@@ -28,6 +28,6 @@ class JoinUglySweater extends Mailable
      */
     public function build()
     {
-        return $this->from('randy@d-hflagging.com')->view('emails.uglysweaterinvitation');
+        return $this->from('support@d-hflagging.com')->view('emails.uglysweaterinvitation');
     }
 }
