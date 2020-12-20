@@ -1,13 +1,18 @@
 <?php
 
+use App\Mail\JoinUglySweater;
 use App\Models\employee;
 use App\Models\legacy_user;
 use App\Models\log;
 use App\Models\receivedsms;
 use App\Models\sms;
+use App\Models\submission;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
+use jbirch8865\AzureAuth\Http\Middleware\AzureAuth;
 use Twilio\Exceptions\TwilioException;
 use Twilio\Rest\Client;
 
@@ -130,7 +135,40 @@ Route::group([], function () {
         return response()->json(["message" => "sms updated"]);
     });
 
+    Route::post('send_ugly_sweater_invitation', function() {
+        $Users = User::where('Active_Status', 1)->whereNotNull('email_address')->get();
+        Mail::to('randy@d-hflagging.com')->send(new JoinUglySweater);
+        return response()->json(['message'=>'email sent'],201);
+    });
+
+    Route::post('ugly_sweater_submission', function() {
+        request()->validate([
+            'imageUrl' => 'string|max:1000000|required',
+            'comment' => 'string|max:255|required'
+        ]);
+        $azure = new AzureAuth;
+        $submission = new submission;
+        $submission->user_id = legacy_user::user()->firstOrFail()->access_token;
+        $submission->comment = request()->input('comment');
+        $submission->url = request()->input('imageUrl');
+        $submission->save();
+        return response()->json(['message' => 'Submission Received','submission' => $submission],201);
+    });
+    Route::put('ugly_sweater_submission/{submission}', function(submission $submission) {
+        request()->validate([
+            'imageUrl' => 'string|max:1000000|required',
+            'comment' => 'string|max:255|required'
+        ]);
+        $submission->comment = request()->input('comment');
+        $submission->url = request()->input('imageUrl');
+        $submission->save();
+        return response()->json(['message' => 'Submission Received','submission' => $submission],201);
+    });
+    Route::get('ugly_sweater_submission', function() {
+        $submission = submission::all();
+        return response()->json(['message' => 'submissions','submissions' => $submission]);
+    });    
     Route::get('quick_query', function () {
-        return response()->json(['message' => "hi"]);
+        return new JoinUglySweater;
     });
 });
