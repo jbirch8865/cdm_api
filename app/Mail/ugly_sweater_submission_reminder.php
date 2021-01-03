@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class JoinUglySweater extends Mailable
+class ugly_sweater_submission_reminder extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -28,6 +28,6 @@ class JoinUglySweater extends Mailable
      */
     public function build()
     {
-        return $this->from('info@d-hflagging.com')->subject('UGLY SWEATER COMPETITION - WINNER RECEIVES A $50 AMAZON GIFT CARD')->view('emails.uglysweaterinvitation');
+        return $this->from('info@d-hflagging.com')->subject('DO NOT FORGET TO ENTER THE UGLY SWEATER COMPETITION')->view('emails.uglysweaterinvitationreminder');
     }
 }

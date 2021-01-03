@@ -1,12 +1,15 @@
 <?php
 
 use App\Mail\JoinUglySweater;
+use App\Mail\ugly_sweater_submission_reminder;
+use App\Mail\ugly_sweater_vote_now;
 use App\Models\employee;
 use App\Models\legacy_user;
 use App\Models\log;
 use App\Models\receivedsms;
 use App\Models\sms;
 use App\Models\submission;
+use App\Models\submission_has_vote;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -135,9 +138,9 @@ Route::group([], function () {
         return response()->json(["message" => "sms updated"]);
     });
 
-    Route::post('ugly_sweater_invitation', function() {
-//        $Users = DB::where('Active_Status', 1)->whereNotNull('email_address')->get();
-        Mail::to('joel@d-hflagging.com')->send(new JoinUglySweater);
+    Route::post('ugly_sweater_vote_now', function() {
+        request()->validate(['email' => 'email|required_without:all','all' => "boolean|required_without:email"]);
+        Mail::to(request()->input('email'))->send(new ugly_sweater_vote_now);
         return response()->json(['message'=>'email sent'],201);
     });
 
@@ -165,9 +168,29 @@ Route::group([], function () {
         return response()->json(['message' => 'Submission Updated','submission' => $submission],201);
     });
     Route::get('ugly_sweater_submission', function() {
-        $submission = submission::all();
+        $submission = submission::with('user')->get();
         return response()->json(['message' => 'submissions','submissions' => $submission]);
     });    
+    Route::get('ugly_sweater_who_I_voted_for', function() {
+        $azure = new AzureAuth();
+        $votes = submission_has_vote::where('user_id',$azure->Get_User_Oid(Request()))->get();
+        return response()->json(['message' => 'my votes','myVotes' => $votes]);
+    });    
+    Route::post('ugly_sweater_I_voted', function() {
+        request()->validate(['id' => 'required|exists:submissions']);
+        $azure = new AzureAuth();
+        $vote = new submission_has_vote;
+        $vote->user_id = $azure->Get_User_Oid(Request());
+        $vote->submission_id = request()->input('id');
+        $vote->save();
+        return response()->json(['message' => 'Thank you for your vote','myVote' => $vote],201);
+    });    
+
+    Route::delete('ugly_sweater_I_voted/{submission_has_vote}', function(submission_has_vote $submission_has_vote) {
+        $submission_has_vote->forceDelete();
+        return response()->json(['message' => 'Your vote was removed','Canceled' => $submission_has_vote],201);
+    });     
+
     Route::get('quick_query', function () {
         return new JoinUglySweater;
     });

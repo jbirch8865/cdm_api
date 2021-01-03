@@ -18,6 +18,6 @@ class submission extends Model
 
     public function user() : HasOne
     {
-        return $this->hasOne('App\Models\User','person_id','user_id');
+        return $this->hasOne('App\Models\legacy_user','access_token','user_id');
     }
 }
